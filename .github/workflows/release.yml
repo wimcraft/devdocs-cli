@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - run: go test -race ./...
+      - name: Build binaries
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          mkdir dist
+          for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64; do
+            os=${target%/*} arch=${target#*/}
+            GOOS=$os GOARCH=$arch go build -trimpath \
+              -ldflags "-s -w -X github.com/wimcraft/devdocs-cli/internal/devdocs.Version=${GITHUB_REF_NAME#v}" \
+              -o "dist/devdocs_${os}_${arch}" ./cmd/devdocs
+          done
+          cd dist && sha256sum devdocs_* > checksums.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --generate-notes
+
+  verify-install:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the published binary
+        env:
+          DEVDOCS_INSTALL_DIR: ${{ runner.temp }}/bin
+          DEVDOCS_VERSION: ${{ github.ref_name }}
+        run: |
+          sh install.sh
+          "$DEVDOCS_INSTALL_DIR/devdocs" --version | grep -qx "devdocs version ${GITHUB_REF_NAME#v}"

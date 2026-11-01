@@ -1,0 +1,5 @@
+/bin/
+/devdocs
+*.test
+!/cmd/devdocs/
+!/internal/devdocs/

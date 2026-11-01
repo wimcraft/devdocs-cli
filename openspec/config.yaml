@@ -1,0 +1,21 @@
+schema: spec-driven
+
+context: |
+  Devdocs is a local-first macOS/Linux CLI for private project context.
+  Implement in Go (minimum 1.24), standard library, invoking installed Git 2.39+.
+  Each code checkout contains a real ignored devdocs/ Git checkout.
+  One private remote holds independent devdocs/<slug>-<uuid> project branches.
+  Commands: config, init, list, attach, status, sync, git, link, unlink.
+  Managed commands never force push, discard work, install links automatically, or execute downloaded content.
+  Explicit native Git access retains user-selected Git behavior and bypasses managed sync safeguards.
+  Product source: the agreed Obsidian Projects/Devdocs.md description.
+  Implementation worker approved by the user: google-antigravity/gemini-3.8-flash:high.
+  Do not substitute the worker model without user approval.
+
+rules:
+  specs:
+    - Specify observable behavior and failure recovery, not internal wiring.
+    - Cover repository isolation and untrusted path declarations explicitly.
+  tasks:
+    - Keep verification separate from implementation and record exercised evidence.
+    - Do not mark runtime scenarios complete based only on compilation.
